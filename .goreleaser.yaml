@@ -20,7 +20,7 @@ builds:
       - aarch64-unknown-linux-gnu
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_
@@ -31,7 +31,7 @@ archives:
     # use zip for windows archives
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 changelog:
   sort: asc
@@ -68,40 +68,20 @@ source:
 sboms:
   - artifacts: archive
 
-# Create Docker images.
-# We create a manifest below, so here the images need the suffix with the
-# architecture.
-dockers:
-  - image_templates:
-      - "ghcr.io/goreleaser/example-deno:{{ .Tag }}-arm64"
+# Create Docker images using the new dockers_v2 builder, which uses
+# `docker buildx` to build a multi-arch manifest in a single step.
+dockers_v2:
+  - images:
+      - "ghcr.io/goreleaser/example-deno"
+    tags:
+      - "{{ .Tag }}"
     dockerfile: Dockerfile
-    goarch: arm64
-    use: buildx
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.name={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source={{.GitURL}}"
-      - "--platform=linux/arm64"
-  - image_templates:
-      - "ghcr.io/goreleaser/example-deno:{{ .Tag }}-amd64"
-    dockerfile: Dockerfile
-    goarch: amd64
-    use: buildx
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.name={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source={{.GitURL}}"
-      - "--platform=linux/amd64"
-
-# Here we join both images into a Docker manifest.
-docker_manifests:
-  - name_template: "ghcr.io/goreleaser/example-deno:{{ .Tag }}"
-    image_templates:
-      - "ghcr.io/goreleaser/example-deno:{{ .Tag }}-arm64"
-      - "ghcr.io/goreleaser/example-deno:{{ .Tag }}-amd64"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"

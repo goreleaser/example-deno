@@ -1,3 +1,4 @@
 FROM debian:13-slim
-COPY example /usr/bin/example
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/example /usr/bin/example
 ENTRYPOINT [ "/usr/bin/example" ]
